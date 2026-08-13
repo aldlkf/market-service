@@ -23,21 +23,22 @@ public class Application {
         ProductService productService = new ProductService(productRepository);
         OrderService orderService = new OrderService(userRepository, productRepository, orderRepository);
 
-        productService.createProduct(1L,"RTX 5070", new BigDecimal(350000.00), 3);
-        productService.createProduct(2L,"R7 7800x3D", new BigDecimal(150000.00), 10);
+        productService.createProduct(1L, "RTX 5070", new BigDecimal("350000.00"), 5);
 
-        User ilyas = new User(1L,"Ilyas","ilyas@example.com", new BigDecimal(2600000.00));
+        User ilyas = new User(1L,"Ilyas","ilyas@example.com", new BigDecimal("500000.00"));
         userRepository.save(ilyas);
 
-        orderService.createOrder(1L,1L,1);
-        orderService.createOrder(1L,2L,1);
+        orderService.createOrder(1L, 1L,1);
+        System.out.println("Balance after the order: " + ilyas.getFormattedBalance());
+
+        orderService.cancelOrder(1L);
+
+        System.out.println("Balance after the cancel: " + ilyas.getFormattedBalance());
 
         System.out.println("\n=== ORDER HISTORY " + ilyas.getName().toUpperCase()+ " ===");
         List<Order> history = orderService.getUserOrders(1L);
         for (Order order : history) {
             System.out.println(order);
         }
-
-        System.out.println("\nBALANCE NOW: " + ilyas.getFormattedBalance());
     }
 }

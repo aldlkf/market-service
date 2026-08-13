@@ -70,4 +70,40 @@ public class OrderService {
         return orderRepository.findByUserId(userId);
     }
 
+    public boolean cancelOrder(Long orderId){
+        System.out.println("\n>>> CANCELLING ORDER №" + orderId + " <<<");
+
+        var orderOptional = orderRepository.findById(orderId);
+        if (orderOptional.isEmpty()){
+            System.out.println("ERROR: Order with ID " + orderId + " not found!");
+            return false;
+        }
+        Order order = orderOptional.get();
+
+        if ("CANCELLED".equals(order.getStatus())){
+            System.out.println("ERROR: Order №" + orderId + " is already cancelled!");
+            return false;
+        }
+
+        var userOptional = userRepository.findById(order.getUserId());
+        var productOptional = productRepository.findById(order.getProductId());
+
+        if (userOptional.isEmpty() || productOptional.isEmpty()) {
+            System.out.println("ERROR: User or Product data is corrupted!");
+            return false;
+        }
+
+        User user = userOptional.get();
+        Product product = productOptional.get();
+
+        user.setBalance(user.getBalance().add(order.getTotalPrice()));
+        product.setStockQuantity(product.getStockQuantity() + order.getQuantity());
+
+        order.setStatus("CANCELLED");
+
+        System.out.println("SUCCESS! Order №" + orderId + (" cancelled."));
+        System.out.println("Return of " + String.format("%,.2f KZT", order.getTotalPrice()) + " completed to user" + user.getName());
+
+        return true;
+    }
 }
