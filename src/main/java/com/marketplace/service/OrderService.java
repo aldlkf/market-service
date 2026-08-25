@@ -1,5 +1,6 @@
 package com.marketplace.service;
 
+import com.marketplace.exception.*;
 import com.marketplace.model.Order;
 import com.marketplace.model.Product;
 import com.marketplace.model.User;
@@ -19,91 +20,53 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private long orderIdCounter = 1;
 
-    public OrderService(UserRepository userRepository, ProductRepository productRepository, OrderRepository orderRepository){
+    public OrderService(UserRepository userRepository, ProductRepository productRepository, OrderRepository orderRepository) {
         this.userRepository = userRepository;
         this.productRepository = productRepository;
         this.orderRepository = orderRepository;
     }
 
-    public boolean createOrder(Long userId, Long productId, int quantity){
-        System.out.println(">>> MAKING ORDER <<<");
+    public Order createOrder(Long userId, Long productId, int quantity) {
+        User ilyas = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
 
-        var userOptional = userRepository.findById(userId);
-        if (userOptional.isEmpty()){
-            System.out.println("ERROR: NO USER WITH "+userId+" Id");
-            return false;
-        }
-        User user = userOptional.get();
-
-        var productOptional = productRepository.findById(productId);
-        if (productOptional.isEmpty()){
-            System.out.println("ERROR: NO PRODUCT WITH "+productId+" Id");
-            return false;
-        }
-        Product product = productOptional.get();
+        Product product = productRepository.findById(productId).orElseThrow(() -> new ProductNotFoundException(productId));
 
         if (product.getStockQuantity() < quantity){
-            System.out.println("ERROR: NOT ENOUGH ON STOCK! AVAILABLE: "+product.getStockQuantity());
-            return false;
+            throw new ProductOutOfStockException(("Not enough stock for product: " + product.getTitle()+". Requested " + quantity + ", Available" + product.getStockQuantity()));
         }
 
         BigDecimal totalPrice = product.getPrice().multiply(new BigDecimal(quantity));
 
-        if (user.getBalance().compareTo(totalPrice) < 0){
-            System.out.println("ERROR: USER "+user.getName()+" HAS NOT ENOUGH MONEY! BALANCE: "+ user.getFormattedBalance());
-            return false;
+        if (ilyas.getBalance().compareTo(totalPrice) < 0){
+            throw new InsufficientFundsException("User " + ilyas.getName() + " has insufficient funds. Required: " + totalPrice + ", Available: " + ilyas.getBalance());
         }
 
-        user.setBalance(user.getBalance().subtract(totalPrice));
+        ilyas.setBalance(ilyas.getBalance().subtract(totalPrice));
         product.setStockQuantity(product.getStockQuantity() - quantity);
 
         Order order = new Order(orderIdCounter++, userId, productId, quantity, totalPrice, "PAID");
-        orderRepository.save(order);
-
-        System.out.println("SUCCESS! YOUR ORDER IS №" + order.getId());
-        System.out.println("ORDER DETAIL: " + order);
-
-        return true;
+        return orderRepository.save(order);
     }
 
-    public List<Order> getUserOrders(Long userId) {
-        return orderRepository.findByUserId(userId);
-    }
+    public void cancelOrder(Long orderId){
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new MarketplaceException("Order with ID " + orderId + " not found"));
 
-    public boolean cancelOrder(Long orderId){
-        System.out.println("\n>>> CANCELLING ORDER №" + orderId + " <<<");
-
-        var orderOptional = orderRepository.findById(orderId);
-        if (orderOptional.isEmpty()){
-            System.out.println("ERROR: Order with ID " + orderId + " not found!");
-            return false;
-        }
-        Order order = orderOptional.get();
-
-        if ("CANCELLED".equals(order.getStatus())){
-            System.out.println("ERROR: Order №" + orderId + " is already cancelled!");
-            return false;
+        if("CANCELLED".equals(order.getStatus())){
+            throw new MarketplaceException("Order №" + orderId + " is already cancelled");
         }
 
-        var userOptional = userRepository.findById(order.getUserId());
-        var productOptional = productRepository.findById(order.getProductId());
+        User ilyas = userRepository.findById(order.getUserId()).orElseThrow(() -> new UserNotFoundException(order.getUserId()));
 
-        if (userOptional.isEmpty() || productOptional.isEmpty()) {
-            System.out.println("ERROR: User or Product data is corrupted!");
-            return false;
-        }
+        Product product = productRepository.findById(order.getProductId()).orElseThrow(() -> new ProductNotFoundException(order.getProductId()));
 
-        User user = userOptional.get();
-        Product product = productOptional.get();
-
-        user.setBalance(user.getBalance().add(order.getTotalPrice()));
+        ilyas.setBalance(ilyas.getBalance().add(order.getTotalPrice()));
         product.setStockQuantity(product.getStockQuantity() + order.getQuantity());
 
         order.setStatus("CANCELLED");
-
-        System.out.println("SUCCESS! Order №" + orderId + (" cancelled."));
-        System.out.println("Return of " + String.format("%,.2f KZT", order.getTotalPrice()) + " completed to user" + user.getName());
-
-        return true;
     }
+
+    public List<Order> getUserOrders(Long userId){
+        return orderRepository.findByUserId(userId);
+    }
+
 }
