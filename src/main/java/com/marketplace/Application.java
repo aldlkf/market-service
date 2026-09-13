@@ -1,34 +1,35 @@
 package com.marketplace;
 
-import com.marketplace.exception.MarketplaceException;
 import com.marketplace.model.User;
-import com.marketplace.repository.OrderRepository;
-import com.marketplace.repository.ProductRepository;
+import com.marketplace.repository.JdbcUserRepository;
 import com.marketplace.repository.UserRepository;
-import com.marketplace.service.OrderService;
-import com.marketplace.service.ProductService;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 public class Application {
 
-    public static void main(String[] args){
-        ProductRepository productRepository = new ProductRepository();
-        UserRepository userRepository = new UserRepository();
-        OrderRepository orderRepository = new OrderRepository();
+    public static void main(String[] args) {
+        UserRepository userRepository = new JdbcUserRepository();
 
-        ProductService productService = new ProductService(productRepository);
-        OrderService orderService = new OrderService(userRepository, productRepository, orderRepository);
+        System.out.println("=== Достаем пользователя из PostgreSQL ===");
+        Optional<User> userOptional = userRepository.findById(1L);
 
-        productService.createProduct(1L, "RTX 5070", new BigDecimal("350000.00"), 5);
-        User ilyas = new User(1L,"Ilyas","ilyas@example.com", new BigDecimal("500000.00"));
-        userRepository.save(ilyas);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            System.out.println("Найден пользователь: " + user.getName() + " | Баланс: " + user.getBalance());
 
-        try {
-            System.out.println("Trying to buy the product...");
-            orderService.createOrder(3L,1L,1);
-        } catch (MarketplaceException e){
-            System.out.println("CAUGHT EXCEPTION: " + e.getMessage());
+            System.out.println("\n=== Обновляем баланс в БД ===");
+            user.setBalance(user.getBalance().subtract(new BigDecimal("50000.00")));
+            userRepository.save(user);
+            System.out.println("Баланс успешно обновлен!");
+
+            Optional<User> updatedUser = userRepository.findById(1L);
+            updatedUser.ifPresent(u ->
+                    System.out.println("Проверка из БД -> Новый баланс: " + u.getBalance())
+            );
+        } else {
+            System.out.println("Пользователь с ID = 1 не найден в базе данных.");
         }
     }
 }

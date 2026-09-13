@@ -2,30 +2,14 @@ package com.marketplace.repository;
 
 import com.marketplace.model.User;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class UserRepository {
+public interface UserRepository {
 
-    private final List<User> users = new ArrayList<>();
+    User save(User user);
 
-    public User save(User user){
-        users.add(user);
-        return user;
-    }
+    Optional<User> findById(Long id);
 
-    public Optional<User> findById(Long id){
-        for(User user : users){
-            if(user.getId().equals(id)){
-                return Optional.of(user);
-            }
-        }
-        return Optional.empty();
-    }
-
-    public List<User> findAll(){
-        return users;
-    }
-
+    List<User> findAll();
 }
