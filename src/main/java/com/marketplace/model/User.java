@@ -1,13 +1,23 @@
 package com.marketplace.model;
 
+import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.util.Objects;
 
+@Entity
+@Table(name = "users")
 public class User {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, length = 100)
     private String name;
+
+    @Column(nullable = false, unique = true, scale = 2)
     private String email;
+
+    @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal balance;
 
     public User(){
@@ -36,7 +46,7 @@ public class User {
         this.name = name;
     }
 
-    public String getEmail() {
+    public String getEmail(){
         return email;
     }
 
@@ -50,33 +60,6 @@ public class User {
 
     public void setBalance(BigDecimal balance){
         this.balance = balance;
-    }
-
-    public String getFormattedBalance(){
-        return String.format("%,.2f KZT", balance);
-    }
-
-    @Override
-    public String toString(){
-        return "User{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", email='" + email + '\'' +
-                ", balance=" + getFormattedBalance() +
-                '}';
-    }
-
-    @Override
-    public boolean equals(Object o){
-        if(this==o)return true;
-        if (o== null || getClass() != o.getClass()) return false;
-        User user = (User) o;
-        return Objects.equals(id, user.id);
-    }
-
-    @Override
-    public int hashCode(){
-        return Objects.hash(id);
     }
 
 }
