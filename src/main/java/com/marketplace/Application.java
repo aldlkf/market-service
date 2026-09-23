@@ -1,12 +1,12 @@
 package com.marketplace;
 
-import com.marketplace.model.User;
-import com.marketplace.repository.UserRepository;
+import com.marketplace.model.Order;
+import com.marketplace.service.OrderService;
+import org.aspectj.weaver.ast.Or;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-
 import java.math.BigDecimal;
 
 @SpringBootApplication
@@ -17,23 +17,19 @@ public class Application {
     }
 
     @Bean
-    public CommandLineRunner runner(UserRepository userRepository) {
+    public CommandLineRunner runner(OrderService orderService) {
         return args -> {
             System.out.println("\n==========================================");
-            System.out.println("=== Проверка Spring Data JPA и Hibernate ===");
+            System.out.println("=== Тестирование покупки через OrderService ===");
 
-            userRepository.findById(1L).ifPresent(user -> {
-                System.out.println("Найден пользователь из БД: " + user.getName() + " | Баланс: " + user.getBalance());
+            Order createOrder = orderService.createOrder(1L, 1L,1);
 
-                user.setBalance(user.getBalance().subtract(new BigDecimal("10000.00")));
-                userRepository.save(user);
-                System.out.println("Баланс обновлен через Spring Data JPA!");
-            });
-
-            userRepository.findByEmail("ilyassick@example.com").ifPresent(user -> {
-                System.out.println("Проверка findByEmail -> Имя: " + user.getName() + " | Новый баланс: " + user.getBalance());
-            });
-
+            System.out.println("Заказ успешно создан");
+            System.out.println("ID заказа: " + createOrder.getId());
+            System.out.println("Покупатель: " + createOrder.getUser().getName());
+            System.out.println("Товар: " + createOrder.getProduct().getTitle());
+            System.out.println("Итоговая сумма: " + createOrder.getTotalPrice());
+            System.out.println("Статус: " + createOrder.getStatus());
             System.out.println("==========================================\n");
         };
     }

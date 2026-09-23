@@ -1,72 +1,60 @@
 package com.marketplace.service;
 
-import com.marketplace.exception.*;
+import com.marketplace.exception.InsufficientFundsException;
+import com.marketplace.exception.ProductNotFoundException;
+import com.marketplace.exception.ProductOutOfStockException;
+import com.marketplace.exception.UserNotFoundException;
 import com.marketplace.model.Order;
 import com.marketplace.model.Product;
 import com.marketplace.model.User;
 import com.marketplace.repository.OrderRepository;
 import com.marketplace.repository.ProductRepository;
 import com.marketplace.repository.UserRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.security.PublicKey;
-import java.util.List;
-import java.util.logging.Logger;
 
+@Service
 public class OrderService {
 
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
-    private long orderIdCounter = 1;
 
-    public OrderService(UserRepository userRepository, ProductRepository productRepository, OrderRepository orderRepository) {
+    public OrderService(UserRepository userRepository,
+                        ProductRepository productRepository,
+                        OrderRepository orderRepository) {
         this.userRepository = userRepository;
         this.productRepository = productRepository;
         this.orderRepository = orderRepository;
     }
 
-    public Order createOrder(Long userId, Long productId, int quantity) {
-        User ilyas = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+    @Transactional
+    public Order createOrder(Long userId, Long productId, Integer quantity) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
 
-        Product product = productRepository.findById(productId).orElseThrow(() -> new ProductNotFoundException(productId));
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException("Товар не найден"));
 
-        if (product.getStockQuantity() < quantity){
-            throw new ProductOutOfStockException(("Not enough stock for product: " + product.getTitle()+". Requested " + quantity + ", Available" + product.getStockQuantity()));
+        if (product.getStockQuantity() < quantity) {
+            throw new ProductOutOfStockException("Недостаточно товара на складе");
         }
 
-        BigDecimal totalPrice = product.getPrice().multiply(new BigDecimal(quantity));
+        BigDecimal totalPrice = product.getPrice().multiply(BigDecimal.valueOf(quantity));
 
-        if (ilyas.getBalance().compareTo(totalPrice) < 0){
-            throw new InsufficientFundsException("User " + ilyas.getName() + " has insufficient funds. Required: " + totalPrice + ", Available: " + ilyas.getBalance());
+        if (user.getBalance().compareTo(totalPrice) < 0) {
+            throw new InsufficientFundsException("Недостаточно средств на балансе");
         }
 
-        ilyas.setBalance(ilyas.getBalance().subtract(totalPrice));
+        user.setBalance(user.getBalance().subtract(totalPrice));
         product.setStockQuantity(product.getStockQuantity() - quantity);
 
-        Order order = new Order(orderIdCounter++, userId, productId, quantity, totalPrice, "PAID");
+        userRepository.save(user);
+        productRepository.save(product);
+
+        Order order = new Order(null, user, product, quantity, totalPrice, "PAID");
         return orderRepository.save(order);
     }
-
-    public void cancelOrder(Long orderId){
-        Order order = orderRepository.findById(orderId).orElseThrow(() -> new MarketplaceException("Order with ID " + orderId + " not found"));
-
-        if("CANCELLED".equals(order.getStatus())){
-            throw new MarketplaceException("Order №" + orderId + " is already cancelled");
-        }
-
-        User ilyas = userRepository.findById(order.getUserId()).orElseThrow(() -> new UserNotFoundException(order.getUserId()));
-
-        Product product = productRepository.findById(order.getProductId()).orElseThrow(() -> new ProductNotFoundException(order.getProductId()));
-
-        ilyas.setBalance(ilyas.getBalance().add(order.getTotalPrice()));
-        product.setStockQuantity(product.getStockQuantity() + order.getQuantity());
-
-        order.setStatus("CANCELLED");
-    }
-
-    public List<Order> getUserOrders(Long userId){
-        return orderRepository.findByUserId(userId);
-    }
-
 }

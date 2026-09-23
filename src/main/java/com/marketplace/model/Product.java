@@ -1,15 +1,24 @@
 package com.marketplace.model;
 
 import java.math.BigDecimal;
-import java.util.Objects;
+import jakarta.persistence.*;
 
+@Entity
+@Table(name = "products")
 public class Product {
 
-    private Long id;
-    private String title;
-    private BigDecimal price;
-    private int stockQuantity;
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
 
+    @Column(nullable = false, length = 255)
+    private String title;
+
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal price;
+
+    @Column(name = "stock_quantity", nullable = false)
+    private Integer stockQuantity;
 
     public Product(){
     }
@@ -41,39 +50,20 @@ public class Product {
         return price;
     }
 
+    public void setPrice(BigDecimal price){
+        this.price = price;
+    }
+
     public String getFormattedPrice() {
         return String.format("%,.2f KZT", price);
     }
 
-    public int getStockQuantity(){
+    public Integer getStockQuantity(){
         return stockQuantity;
     }
 
-    public void setStockQuantity(int stockQuantity){
+    public void setStockQuantity(Integer stockQuantity){
         this.stockQuantity = stockQuantity;
-    }
-
-    @Override
-    public String toString() {
-        return "Product {" +
-                "id=" + id +
-                ", title='" + title + '\'' +
-                ", price=" + getFormattedPrice() +
-                ", stockQuantity=" + stockQuantity +
-                '}';
-    }
-
-    @Override
-    public boolean equals(Object o){
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Product product = (Product) o;
-        return Objects.equals(id, product.id);
-    }
-
-    @Override
-    public int hashCode(){
-        return Objects.hash(id);
     }
 
 }

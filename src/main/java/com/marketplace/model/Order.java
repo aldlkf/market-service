@@ -1,25 +1,43 @@
 package com.marketplace.model;
 
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Objects;
 
+@Entity
+@Table(name = "orders")
 public class Order {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long userId;
-    private Long productId;
-    private int quantity;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
+
+    @Column(nullable = false)
+    private Integer quantity;
+
+    @Column(name = "total_price", nullable = false, precision = 19, scale = 2)
     private BigDecimal totalPrice;
+
+    @Column(nullable = false, length = 50)
     private String status;
+
+    @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
     public Order(){}
 
-    public Order(Long id, Long userId, Long productId, int quantity, BigDecimal totalPrice, String status) {
+    public Order(Long id, User user, Product product, Integer quantity, BigDecimal totalPrice, String status) {
         this.id = id;
-        this.userId = userId;
-        this.productId = productId;
+        this.user = user;
+        this.product = product;
         this.quantity = quantity;
         this.totalPrice = totalPrice;
         this.status = status;
@@ -34,27 +52,27 @@ public class Order {
         this.id = id;
     }
 
-    public Long getUserId() {
-        return userId;
+    public User getUser() {
+        return user;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public void setUser(User user) {
+        this.user = user;
     }
 
-    public Long getProductId(){
-        return productId;
+    public Product getProduct(){
+        return product;
     }
 
-    public void setProductId(Long productId){
-        this.productId = productId;
+    public void setProduct(Product product){
+        this.product = product;
     }
 
     public int getQuantity(){
         return quantity;
     }
 
-    public void setQuantity(int quantity){
+    public void setQuantity(Integer quantity){
         this.quantity = quantity;
     }
 
@@ -82,30 +100,5 @@ public class Order {
         this.createdAt = createdAt;
     }
 
-    @Override
-    public String toString() {
-        return "Order{" +
-                "id=" + id +
-                ", UserId=" + userId +
-                ", productId=" + productId +
-                ", quantity=" + quantity +
-                ", totalPrice=" + String.format("%,.2f KZT", totalPrice) +
-                ", status=" + status + '\'' +
-                ", createdAt=" + createdAt +
-                '}';
-    }
-
-    @Override
-    public boolean equals(Object o){
-        if (this==o)return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Order order = (Order) o;
-        return Objects.equals(id, order.id);
-    }
-
-    @Override
-    public int hashCode(){
-        return Objects.hash(id);
-    }
 }
 
