@@ -1,6 +1,7 @@
 package com.marketplace.service;
 
 import com.marketplace.exception.InsufficientFundsException;
+import com.marketplace.exception.ProductNotFoundException;
 import com.marketplace.exception.UserNotFoundException;
 import com.marketplace.model.Order;
 import com.marketplace.model.Product;
@@ -70,6 +71,25 @@ class OrderServiceTest {
         when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
 
         assertThrows(InsufficientFundsException.class, () -> orderService.createOrder(2L, 1L, 1));
+        verify(orderRepository, never()).save(any(Order.class));
+    }
+
+    @Test
+    @DisplayName("Ошибка создания заказа: пользователь не найден")
+    void createOrder_UserNotFound_ThrowsException() {
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(UserNotFoundException.class, () -> orderService.createOrder(999L, 1L, 1));
+        verify(orderRepository, never()).save(any(Order.class));
+    }
+
+    @Test
+    @DisplayName("Ошибка создания заказа: товар не найден")
+    void createOrder_ProductNotFound_ThrowsException() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(productRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(ProductNotFoundException.class, () -> orderService.createOrder(1L, 999L, 1));
         verify(orderRepository, never()).save(any(Order.class));
     }
 

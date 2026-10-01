@@ -3,6 +3,7 @@ package com.marketplace.controller;
 import com.marketplace.dto.OrderRequest;
 import com.marketplace.model.Order;
 import com.marketplace.service.OrderService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +19,7 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<Order> createOrder(@RequestBody OrderRequest request) {
+    public ResponseEntity<Order> createOrder(@Valid @RequestBody OrderRequest request) {
         Order createdOrder = orderService.createOrder(
                 request.getUserId(),
                 request.getProductId(),

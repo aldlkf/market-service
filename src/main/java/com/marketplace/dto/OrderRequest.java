@@ -1,8 +1,18 @@
 package com.marketplace.dto;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+
 public class OrderRequest {
+
+    @NotNull(message = "ID пользователя не может быть пустым")
     private Long userId;
+
+    @NotNull(message = "ID товара не может быть пустым")
     private Long productId;
+
+    @NotNull(message = "Количество товара должно быть указано")
+    @Min(value = 1, message = "Количество товара должно быть не менее 1")
     private Integer quantity;
 
     public OrderRequest() {
