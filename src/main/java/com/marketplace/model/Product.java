@@ -70,22 +70,3 @@ public class Product {
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
