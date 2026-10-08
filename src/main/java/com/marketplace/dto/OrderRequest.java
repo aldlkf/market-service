@@ -5,9 +5,6 @@ import jakarta.validation.constraints.NotNull;
 
 public class OrderRequest {
 
-    @NotNull(message = "ID пользователя не может быть пустым")
-    private Long userId;
-
     @NotNull(message = "ID товара не может быть пустым")
     private Long productId;
 
@@ -18,18 +15,9 @@ public class OrderRequest {
     public OrderRequest() {
     }
 
-    public OrderRequest(Long userId, Long productId, Integer quantity) {
-        this.userId = userId;
+    public OrderRequest(Long productId, Integer quantity) {
         this.productId = productId;
         this.quantity = quantity;
-    }
-
-    public Long getUserId(){
-        return userId;
-    }
-
-    public void setUserId(Long userId){
-        this.userId = userId;
     }
 
     public Long getProductId(){
