@@ -2,6 +2,8 @@ package com.marketplace.controller;
 
 import com.marketplace.model.Product;
 import com.marketplace.repository.ProductRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -13,6 +15,7 @@ import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/products")
+@Tag(name = "Products", description = "Управление каталогом товаров")
 public class ProductController {
 
     private final ProductRepository productRepository;
@@ -22,6 +25,10 @@ public class ProductController {
     }
 
     @GetMapping
+    @Operation(
+            summary = "Каталог товаров с фильтрацией и пагинацией",
+            description = "Позволяет искать товары по названию, диапазону цен и сортировать результаты. Доступно всем без авторизации."
+    )
     public Page<Product> getProducts(
             @RequestParam(required = false, defaultValue = "") String query,
             @RequestParam(required = false) BigDecimal minPrice,
@@ -46,6 +53,7 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Получить товар по ID", description = "Возвращает детальную информацию о товаре. Доступно всем без авторизации.")
     public ResponseEntity<Product> getProductById(@PathVariable Long id) {
         return productRepository.findById(id)
                 .map(ResponseEntity::ok)
