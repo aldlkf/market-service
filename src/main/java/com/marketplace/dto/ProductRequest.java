@@ -11,7 +11,7 @@ public class ProductRequest {
     @NotBlank(message = "Название товара обязательно")
     private String title;
 
-    @NotBlank(message = "Цена обязательно")
+    @NotNull(message = "Цена обязательна")
     @DecimalMin(value = "0.01", message = "Цена должна быть больше нуля")
     private BigDecimal price;
 
