@@ -58,4 +58,10 @@ public class OrderService {
 
         return orderRepository.save(order);
     }
+
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<Order> getUserOrders(User user, org.springframework.data.domain.Pageable pageable){
+        return orderRepository.findByUser(user, pageable);
+    }
+
 }
