@@ -1,45 +1,45 @@
 package com.marketplace.controller;
 
-import com.marketplace.model.Order;
+import com.marketplace.dto.TopUpBalanceRequest;
 import com.marketplace.model.User;
-import com.marketplace.repository.OrderRepository;
-import com.marketplace.repository.UserRepository;
-import com.marketplace.exception.UserNotFoundException;
+import com.marketplace.service.OrderService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import java.math.BigDecimal;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
+@Tag(name = "Users", description = "Управление профилем пользователя и балансом")
 public class UserController {
 
-    private final UserRepository userRepository;
-    private final OrderRepository orderRepository;
+    private final OrderService orderService;
 
-    public UserController(UserRepository userRepository, OrderRepository orderRepository) {
-        this.userRepository = userRepository;
-        this.orderRepository = orderRepository;
+    public UserController(OrderService orderService) {
+        this.orderService = orderService;
     }
 
-    @GetMapping
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    @PostMapping("/balance/top-up")
+    @Operation(
+            summary = "Пополнить баланс текущего пользователя",
+            description = "Увеличивает баланс авторизованного пользователя на указанную сумму. Доступно любому аутентифицированному пользователю."
+    )
+    public ResponseEntity<Map<String, Object>> topUpBalance(
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody TopUpBalanceRequest request
+    ) {
+        BigDecimal newBalance = orderService.topUpBalance(currentUser, request.getAmount());
+        return ResponseEntity.ok(Map.of(
+                "message", "Баланс успешно пополнен",
+                "newBalance", newBalance
+        ));
     }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
-        return userRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/{userId}/orders")
-    public List<Order> getUserOrders(@PathVariable Long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new UserNotFoundException("Пользователь с ID " + userId + " не найден");
-        }
-        return orderRepository.findByUserId(userId);
-    }
-
 }

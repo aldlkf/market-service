@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Service
 public class OrderService {
@@ -58,6 +59,7 @@ public class OrderService {
         order.setQuantity(request.getQuantity());
         order.setTotalPrice(totalCost);
         order.setStatus("PAID");
+        order.setCreatedAt(LocalDateTime.now()); // Теперь createdAt всегда заполнен
 
         Order savedOrder = orderRepository.save(order);
         return new OrderResponseDto(savedOrder);
@@ -66,5 +68,18 @@ public class OrderService {
     @Transactional(readOnly = true)
     public Page<OrderResponseDto> getUserOrders(User user, Pageable pageable) {
         return orderRepository.findByUser(user, pageable).map(OrderResponseDto::new);
+    }
+
+    @Transactional
+    public BigDecimal topUpBalance(User currentUser, BigDecimal amount) {
+        User user = userRepository.findById(currentUser.getId())
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+
+        BigDecimal currentBalance = user.getBalance() != null ? user.getBalance() : BigDecimal.ZERO;
+        BigDecimal newBalance = currentBalance.add(amount);
+        user.setBalance(newBalance);
+        userRepository.save(user);
+
+        return newBalance;
     }
 }
