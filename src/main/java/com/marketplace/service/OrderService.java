@@ -1,6 +1,7 @@
 package com.marketplace.service;
 
 import com.marketplace.dto.OrderRequest;
+import com.marketplace.dto.OrderResponseDto;
 import com.marketplace.exception.InsufficientFundsException;
 import com.marketplace.exception.ProductNotFoundException;
 import com.marketplace.exception.ProductOutOfStockException;
@@ -10,6 +11,8 @@ import com.marketplace.model.User;
 import com.marketplace.repository.OrderRepository;
 import com.marketplace.repository.ProductRepository;
 import com.marketplace.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +32,7 @@ public class OrderService {
     }
 
     @Transactional
-    public Order createOrder(User user, OrderRequest request) {
+    public OrderResponseDto createOrder(User user, OrderRequest request) {
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new ProductNotFoundException("Товар не найден"));
 
@@ -56,12 +59,12 @@ public class OrderService {
         order.setTotalPrice(totalCost);
         order.setStatus("PAID");
 
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+        return new OrderResponseDto(savedOrder);
     }
 
     @Transactional(readOnly = true)
-    public org.springframework.data.domain.Page<Order> getUserOrders(User user, org.springframework.data.domain.Pageable pageable){
-        return orderRepository.findByUser(user, pageable);
+    public Page<OrderResponseDto> getUserOrders(User user, Pageable pageable) {
+        return orderRepository.findByUser(user, pageable).map(OrderResponseDto::new);
     }
-
 }
