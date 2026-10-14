@@ -56,4 +56,19 @@ public class OrderController{
         Pageable pageable = PageRequest.of(page, size, sort);
         return ResponseEntity.ok(orderService.getUserOrders(currentUser, pageable));
     }
+
+    @PostMapping("/{id}/cancel")
+    @Operation(
+            summary = "Отменить заказ",
+            description = "Отменяет оплаченный заказ, возвращает средства на баланс пользователя и восстанавливает остаток товара на складе. Доступно владельцу заказа или администратору."
+    )
+
+    public ResponseEntity<OrderResponseDto> cancelOrder(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser
+    ){
+        OrderResponseDto canceledOrder = orderService.cancelOrder(id, currentUser);
+        return ResponseEntity.ok(canceledOrder);
+    }
+
 }

@@ -2,9 +2,7 @@ package com.marketplace.service;
 
 import com.marketplace.dto.OrderRequest;
 import com.marketplace.dto.OrderResponseDto;
-import com.marketplace.exception.InsufficientFundsException;
-import com.marketplace.exception.ProductNotFoundException;
-import com.marketplace.exception.ProductOutOfStockException;
+import com.marketplace.exception.*;
 import com.marketplace.model.Order;
 import com.marketplace.model.Product;
 import com.marketplace.model.User;
@@ -81,5 +79,36 @@ public class OrderService {
         userRepository.save(user);
 
         return newBalance;
+    }
+
+    @Transactional
+    public OrderResponseDto cancelOrder(Long orderId, User currentUser) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Заказ не найден"));
+
+    boolean isAdmin = currentUser.getRole() != null && currentUser.getRole().name().equals("ADMIN");
+        if (!order.getUser().getId().equals(currentUser.getId()) && !isAdmin) {
+        throw new AccessDeniedCustomException("У вас нет прав для отмены этого заказа");
+    }
+
+    if ("CANCELED".equalsIgnoreCase(order.getStatus())) {
+        throw new IllegalOrderStateException("Заказ уже был отменен ранее");
+    }
+
+    User orderOwner = order.getUser();
+    BigDecimal refundAmount = order.getTotalPrice();
+    orderOwner.setBalance(orderOwner.getBalance().add(refundAmount));
+        userRepository.save(orderOwner);
+
+    Product product = order.getProduct();
+    if (product != null) {
+        product.setStockQuantity(product.getStockQuantity() + order.getQuantity());
+        productRepository.save(product);
+    }
+
+    order.setStatus("CANCELED");
+    Order savedOrder = orderRepository.save(order);
+
+    return new OrderResponseDto(savedOrder);
     }
 }
