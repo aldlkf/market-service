@@ -6,13 +6,12 @@ import com.marketplace.repository.ProductRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.aspectj.bridge.IMessage;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -66,14 +65,14 @@ public class ProductController {
 
     @PostMapping
     @Operation(summary = "Создать новый товар (ADMIN)", description = "Добавляет товар в базу. Требуется роль ADMIN.")
-    public ResponseEntity<Product> createProduct(@Valid @RequestBody ProductRequest request){
+    public ResponseEntity<Product> createProduct(@Valid @RequestBody ProductRequest request) {
         Product product = new Product();
         product.setTitle(request.getTitle());
         product.setPrice(request.getPrice());
         product.setStockQuantity(request.getStockQuantity());
 
         Product saved = productRepository.save(product);
-        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(saved);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @PutMapping("/{id}")
@@ -81,9 +80,9 @@ public class ProductController {
     public ResponseEntity<Product> updateProduct(
             @PathVariable Long id,
             @Valid @RequestBody ProductRequest request
-    ){
+    ) {
         return productRepository.findById(id)
-                .map(product ->{
+                .map(product -> {
                     product.setTitle(request.getTitle());
                     product.setPrice(request.getPrice());
                     product.setStockQuantity(request.getStockQuantity());
@@ -93,14 +92,12 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Удалить товар (ADMIN)", description = "Удаляет товар из каталога. Требуется роль ADMIN.")
-    public ResponseEntity<Void> deletePost(@PathVariable Long id){
-        if (!productRepository.existsById(id)){
+    @Operation(summary = "Удалить товар (ADMIN)", description = "Помечает товар как удаленный (Soft Delete). Требуется роль ADMIN.")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        if (!productRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
         productRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
-
-
 }

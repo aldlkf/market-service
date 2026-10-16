@@ -1,18 +1,22 @@
 package com.marketplace.model;
 
-import java.math.BigDecimal;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
+import java.math.BigDecimal;
 
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
 @Table(name = "products")
+@SQLDelete(sql = "UPDATE products SET is_deleted = true WHERE id = ?")
+@SQLRestriction("is_deleted = false")
 public class Product {
 
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(nullable = false, length = 255)
     private String title;
@@ -23,21 +27,25 @@ public class Product {
     @Column(name = "stock_quantity", nullable = false)
     private Integer stockQuantity;
 
-    public Product(){
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
+
+    public Product() {
     }
 
-    public Product(Long id, String title, BigDecimal price, int stockQuantity){
+    public Product(Long id, String title, BigDecimal price, int stockQuantity) {
         this.id = id;
         this.title = title;
         this.price = price;
         this.stockQuantity = stockQuantity;
+        this.isDeleted = false;
     }
 
-    public Long getId(){
+    public Long getId() {
         return id;
     }
 
-    public void setId(Long id){
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -45,28 +53,31 @@ public class Product {
         return title;
     }
 
-    public void setTitle(String title){
+    public void setTitle(String title) {
         this.title = title;
     }
 
-    public BigDecimal getPrice(){
+    public BigDecimal getPrice() {
         return price;
     }
 
-    public void setPrice(BigDecimal price){
+    public void setPrice(BigDecimal price) {
         this.price = price;
     }
 
-    public String getFormattedPrice() {
-        return String.format("%,.2f KZT", price);
-    }
-
-    public Integer getStockQuantity(){
+    public Integer getStockQuantity() {
         return stockQuantity;
     }
 
-    public void setStockQuantity(Integer stockQuantity){
+    public void setStockQuantity(Integer stockQuantity) {
         this.stockQuantity = stockQuantity;
     }
 
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
+    }
 }
