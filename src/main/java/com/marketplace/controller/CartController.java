@@ -3,6 +3,7 @@ package com.marketplace.controller;
 import com.marketplace.dto.CartItemRequest;
 import com.marketplace.dto.CartItemResponseDto;
 import com.marketplace.dto.CartResponseDto;
+import com.marketplace.dto.OrderResponseDto;
 import com.marketplace.model.User;
 import com.marketplace.service.CartService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +13,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import javax.swing.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/cart")
@@ -56,5 +60,18 @@ public class CartController {
         cartService.clearCart(currentUser);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/checkout")
+    @Operation(
+            summary = "Оформить заказ из корзины (Checkout)",
+            description = "Списывает общую сумму с баланса, уменьшает остаток товаров на складе, создает заказы со статусом PAID и очищает корзину."
+    )
+    public ResponseEntity<List<OrderResponseDto>> checkout(
+            @AuthenticationPrincipal User currentUser
+    ){
+        List<OrderResponseDto> orders = cartService.checkout(currentUser);
+        return ResponseEntity.status(HttpStatus.CREATED).body(orders);
+    }
+
 }
 

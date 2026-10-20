@@ -1,6 +1,19 @@
 package com.marketplace.model;
 
+import com.marketplace.exception.InsufficientFundsException;
+import com.marketplace.repository.UserRepository;
+import com.marketplace.repository.OrderRepository;
+import com.marketplace.dto.OrderResponseDto;
+import com.marketplace.exception.ProductOutOfStockException;
 import jakarta.persistence.*;
+import org.aspectj.weaver.ast.ITestVisitor;
+import org.aspectj.weaver.ast.Or;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "cart_items")
