@@ -2,7 +2,7 @@ package com.marketplace.controller;
 
 import com.marketplace.dto.ProductRequest;
 import com.marketplace.model.Product;
-import com.marketplace.repository.ProductRepository;
+import com.marketplace.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -21,10 +21,10 @@ import java.math.BigDecimal;
 @Tag(name = "Products", description = "Управление каталогом товаров")
 public class ProductController {
 
-    private final ProductRepository productRepository;
+    private final ProductService productService;
 
-    public ProductController(ProductRepository productRepository) {
-        this.productRepository = productRepository;
+    public ProductController(ProductService productService) {
+        this.productService = productService;
     }
 
     @GetMapping
@@ -46,58 +46,35 @@ public class ProductController {
                 : Sort.by(sortBy).ascending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
-
-        BigDecimal min = (minPrice != null) ? minPrice : BigDecimal.ZERO;
-        BigDecimal max = (maxPrice != null) ? maxPrice : new BigDecimal("999999999");
-
-        return productRepository.findByTitleContainingIgnoreCaseAndPriceBetween(
-                query, min, max, pageable
-        );
+        return productService.getProducts(query, minPrice, maxPrice, pageable);
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Получить товар по ID", description = "Возвращает детальную информацию о товаре. Доступно всем без авторизации.")
-    public ResponseEntity<Product> getProductById(@PathVariable Long id) {
-        return productRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @Operation(summary = "Получить товар по ID", description = "Возвращает детальную информацию о товаре. Результат кешируется.")
+    public ResponseEntity<Product> getProductById(@PathVariable Long id){
+        return ResponseEntity.ok(productService.getProductById(id));
     }
 
     @PostMapping
     @Operation(summary = "Создать новый товар (ADMIN)", description = "Добавляет товар в базу. Требуется роль ADMIN.")
-    public ResponseEntity<Product> createProduct(@Valid @RequestBody ProductRequest request) {
-        Product product = new Product();
-        product.setTitle(request.getTitle());
-        product.setPrice(request.getPrice());
-        product.setStockQuantity(request.getStockQuantity());
-
-        Product saved = productRepository.save(product);
+    public ResponseEntity<Product> createProduct(@Valid @RequestBody ProductRequest request){
+        Product saved = productService.createProduct(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Обновить товар (ADMIN)", description = "Обновляет данные существующего товара. Требуется роль ADMIN.")
+    @Operation(summary = "Обновить товар (ADMIN)", description = "Обновляет данные существующего товара и сбрасывает кеш. Требуется роль ADMIN.")
     public ResponseEntity<Product> updateProduct(
             @PathVariable Long id,
             @Valid @RequestBody ProductRequest request
-    ) {
-        return productRepository.findById(id)
-                .map(product -> {
-                    product.setTitle(request.getTitle());
-                    product.setPrice(request.getPrice());
-                    product.setStockQuantity(request.getStockQuantity());
-                    return ResponseEntity.ok(productRepository.save(product));
-                })
-                .orElse(ResponseEntity.notFound().build());
+    ){
+        return ResponseEntity.ok(productService.updateProduct(id, request));
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Удалить товар (ADMIN)", description = "Помечает товар как удаленный (Soft Delete). Требуется роль ADMIN.")
+    @Operation(summary = "Удалить товар (ADMIN)", description = "Помечает товар как удаленный (Soft Delete) и сбрасывает кеш. Требуется роль ADMIN.")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
-        if (!productRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        productRepository.deleteById(id);
+        productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
     }
 }
