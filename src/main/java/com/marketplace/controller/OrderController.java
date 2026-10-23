@@ -71,4 +71,17 @@ public class OrderController{
         return ResponseEntity.ok(canceledOrder);
     }
 
+    @PatchMapping("/{id}/status")
+    @Operation(
+            summary = "Изменить статус заказа (ADMIN)",
+            description = "Позволяет администратору менять статус заказа (PAID -> SHIPPED -> DELIVERED). Требуется роль ADMIN."
+    )
+    public ResponseEntity<com.marketplace.dto.OrderResponseDto> updateOrderStatus(
+            @PathVariable Long id,
+            @jakarta.validation.Valid @RequestBody com.marketplace.dto.UpdateOrderStatusRequest request
+    ){
+        com.marketplace.dto.OrderResponseDto updated = orderService.updateOrderStatus(id, request.getStatus());
+        return ResponseEntity.ok(updated);
+    }
+
 }

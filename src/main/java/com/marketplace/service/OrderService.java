@@ -4,11 +4,14 @@ import com.marketplace.dto.OrderRequest;
 import com.marketplace.dto.OrderResponseDto;
 import com.marketplace.exception.*;
 import com.marketplace.model.Order;
+import com.marketplace.model.OrderStatus;
 import com.marketplace.model.Product;
 import com.marketplace.model.User;
 import com.marketplace.repository.OrderRepository;
 import com.marketplace.repository.ProductRepository;
 import com.marketplace.repository.UserRepository;
+import org.antlr.v4.runtime.atn.SemanticContext;
+import org.aspectj.weaver.ast.Or;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -111,4 +114,29 @@ public class OrderService {
 
     return new OrderResponseDto(savedOrder);
     }
+
+    @Transactional
+    public OrderResponseDto updateOrderStatus(Long orderId, OrderStatus newStatus){
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() ->new RuntimeException("Заказ не найден"));
+
+        OrderStatus currentStatus;
+        try {
+            currentStatus = OrderStatus.valueOf(order.getStatus());
+        } catch (IllegalArgumentException e){
+            throw new IllegalOrderStateException("Некорректный текущий статус заказа" + order.getStatus());
+        }
+
+        if(!currentStatus.canTransitionTo(newStatus)){
+            throw new IllegalOrderStateException(
+                    String.format("Недопустимый переход статуса: %s -> %s", currentStatus, newStatus)
+            );
+        }
+
+        order.setStatus(newStatus.name());
+        Order updated = orderRepository.save(order);
+        return new OrderResponseDto(updated);
+
+    }
+
 }
