@@ -1,6 +1,5 @@
-target/
-.idea/
+.git
+.idea
+target
 *.iml
-.git/
-.gitignore
-HELP.md
+.mvn

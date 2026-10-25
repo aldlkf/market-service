@@ -1,41 +1,41 @@
 version: '3.8'
 
 services:
-  postgres:
+  db:
     image: postgres:16-alpine
-    container_name: marketplace-postgres
+    container_name: market_postgres
     restart: always
     environment:
-      POSTGRES_DB: marketplace_db
+      POSTGRES_DB: market_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d market_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-market-service:
-  build: .
-  container_name: marketplace-backend
-  restart: always
-  depends_on:
-    - postgres
-  ports:
-    - "8080:8080"
-  environment:
-    SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/marketplace_db
-    SPRING_DATASOURCE_USERNAME: postgres
-    SPRING_DATASOURCE_PASSWORD: password
-    SPRING_JPA_HIBERNATE_DDL_AUTO: validate
-    SPRING_FLYWAY_ENABLED: "true"
-  networks:
-    - app-network
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: market_backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/market_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_FLYWAY_ENABLED: "true"
 
 volumes:
   postgres_data:
-
-networks:
-  app-network:
-    driver: bridge
